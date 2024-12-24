@@ -1,79 +1,282 @@
-import cv2
 import mediapipe as mp
+import cv2
+import math
 import numpy as np
+import faceBlendCommon as fbc
+import csv
 
-import matplotlib.pyplot as plt
+VISUALIZE_FACE_POINTS = False
+path = "/home/andrew/IT-projects-start/"
+# path = ""
 
 class CvMask():
-    def __init__(self, path_to_image: str):
-        # Инициализация объектов для отслеживания лица
-        self.mp_face_mesh = mp.solutions.face_mesh
-        self.mp_drawing = mp.solutions.drawing_utils
-        # Загрузка масок
-        self.mask = cv2.imread(path_to_image, cv2.IMREAD_UNCHANGED)
-    
-    # Функция для наложения маски на лицо
-    def __apply_mask(self, image, mask, landmarks):
-        h, w, _ = image.shape
+    def __init__(self):
+        self.sigma = 50
 
-        # Определение ключевых точек для масштабирования
-        left_cheek = landmarks[234]  # Левая щека
-        right_cheek = landmarks[454]  # Правая щека
-        chin = landmarks[152]  # Подбородок
-        forehead = landmarks[10]  # Лоб
+        self.filters_config = {
+            'anonymous':
+                [{'path': path+"filters/anonymous.png",
+                'anno_path': path+"filters/anonymous_annotations.csv",
+                'morph': True, 'animated': False, 'has_alpha': True}],
+            'anime':
+                [{'path': path+"filters/anime.png",
+                'anno_path': path+"filters/anime_annotations.csv",
+                'morph': True, 'animated': False, 'has_alpha': True}],
+            'dog':
+                [{'path': path+"filters/dog-ears.png",
+                'anno_path': path+"filters/dog-ears_annotations.csv",
+                'morph': False, 'animated': False, 'has_alpha': True},
+                {'path': path+"filters/dog-nose.png",
+                'anno_path': path+"filters/dog-nose_annotations.csv",
+                'morph': False, 'animated': False, 'has_alpha': True}],
+            'cat':
+                [{'path': path+"filters/cat-ears.png",
+                'anno_path': path+"filters/cat-ears_annotations.csv",
+                'morph': False, 'animated': False, 'has_alpha': True},
+                {'path': path+"filters/cat-nose.png",
+                'anno_path': path+"filters/cat-nose_annotations.csv",
+                'morph': False, 'animated': False, 'has_alpha': True}],
+            'jason-joker':
+                [{'path': path+"filters/jason-joker.png",
+                'anno_path': path+"filters/jason-joker_annotations.csv",
+                'morph': True, 'animated': False, 'has_alpha': True}],
+            'gold-crown':
+                [{'path': path+"filters/gold-crown.png",
+                'anno_path': path+"filters/gold-crown_annotations.csv",
+                'morph': False, 'animated': False, 'has_alpha': True}],
+            'flower-crown':
+                [{'path': path+"filters/flower-crown.png",
+                'anno_path': path+"filters/flower-crown_annotations.csv",
+                'morph': False, 'animated': False, 'has_alpha': True}],
+}
 
-        # Рассчитываем размер маски на основе расстояния между щеками и высоты лица
-        cheek_distance = int(np.sqrt((right_cheek.x - left_cheek.x) ** 2 + (right_cheek.y - left_cheek.y) ** 2) * w)
-        face_height = int(np.sqrt((chin.x - forehead.x) ** 2 + (chin.y - forehead.y) ** 2) * h)
+    # detect facial landmarks in image
+    def getLandmarks(self, img):
+        mp_face_mesh = mp.solutions.face_mesh
+        selected_keypoint_indices = [127, 93, 58, 136, 150, 149, 176, 148, 152, 377, 400, 378, 379, 365, 288, 323, 356, 70, 63, 105, 66, 55,
+                    285, 296, 334, 293, 300, 168, 6, 195, 4, 64, 60, 94, 290, 439, 33, 160, 158, 173, 153, 144, 398, 385,
+                    387, 466, 373, 380, 61, 40, 39, 0, 269, 270, 291, 321, 405, 17, 181, 91, 78, 81, 13, 311, 306, 402, 14,
+                    178, 162, 54, 67, 10, 297, 284, 389]
 
-        # Увеличиваем размер маски в 2 раза
-        new_width = int(cheek_distance * 2.2)
-        new_height = int(face_height * 2.5)
-        mask_resized = cv2.resize(mask, (new_width, new_height))
+        height, width = img.shape[:-1]
 
-        # Вычисление центра лица для наложения маски
-        center_x = int((left_cheek.x + right_cheek.x) / 2 * w)
-        center_y = int((forehead.y + chin.y) / 2 * h)
-        mask_x = center_x - new_width // 2
-        mask_y = center_y - new_height // 2
+        with mp_face_mesh.FaceMesh(max_num_faces=1, static_image_mode=True, min_detection_confidence=0.5) as face_mesh:
 
-        # Наложение маски с учетом прозрачности
-        for i in range(mask_resized.shape[0]):
-            for j in range(mask_resized.shape[1]):
-                y, x = mask_y + i, mask_x + j
-                if 0 <= y < h and 0 <= x < w:
-                    alpha = mask_resized[i, j, 3] / 255.0  # Нормализуем альфа-канал
-                    image[y, x] = (1 - alpha) * image[y, x] + alpha * mask_resized[i, j, :3]
+            results = face_mesh.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
-    def process_frame(self, frame):
-        with self.mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1, min_detection_confidence=0.5) as face_mesh:
-            # Преобразование изображения в формат RGB
-            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            image.flags.writeable = False
+            if not results.multi_face_landmarks:
+                print('Face not detected!!!')
+                return 0
 
-            # Обнаружение ключевых точек лица
-            results = face_mesh.process(image)
+            for face_landmarks in results.multi_face_landmarks:
+                values = np.array(face_landmarks.landmark)
+                face_keypnts = np.zeros((len(values), 2))
 
-            # Обратно в формат BGR для отображения
-            image.flags.writeable = True
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+                for idx,value in enumerate(values):
+                    face_keypnts[idx][0] = value.x
+                    face_keypnts[idx][1] = value.y
 
-            # Наложение маски при обнаружении лица
-            if results.multi_face_landmarks:
-                for face_landmarks in results.multi_face_landmarks:
-                    landmarks = face_landmarks.landmark
+                # Convert normalized points to image coordinates
+                face_keypnts = face_keypnts * (width, height)
+                face_keypnts = face_keypnts.astype('int')
 
-                    # Вызываем функцию наложения маски
-                    self.__apply_mask(image, self.mask, landmarks)
-        return image
-    
+                relevant_keypnts = []
+
+                for i in selected_keypoint_indices:
+                    relevant_keypnts.append(face_keypnts[i])
+                return relevant_keypnts
+        return 0
 
 
-# img = cv2.imread('andrew.png', 1) 
-# # # cv2.imshow("image", img)1
-# # # cv2.waitKey(0)
+    def load_filter_img(self, img_path, has_alpha):
+        # Read the image
+        img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
 
-# cv_mask = CvMask("mask1.png")
-# processed_img = cv_mask.process_frame(img)
-# cv2.imshow("image", processed_img)
-# cv2.waitKey(0)
+        alpha = None
+        if has_alpha:
+            # print(img, cv2.split(img))
+            
+            b, g, r, alpha = cv2.split(img)
+            img = cv2.merge((b, g, r))
+
+        return img, alpha
+
+
+    def load_landmarks(self, annotation_file):
+        with open(annotation_file) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=",")
+            points = {}
+            for i, row in enumerate(csv_reader):
+                # skip head or empty line if it's there
+                try:
+                    x, y = int(row[1]), int(row[2])
+                    points[row[0]] = (x, y)
+                except ValueError:
+                    continue
+            return points
+
+
+    def find_convex_hull(self, points):
+        hull = []
+        hullIndex = cv2.convexHull(np.array(list(points.values())), clockwise=False, returnPoints=False)
+        addPoints = [
+            [48], [49], [50], [51], [52], [53], [54], [55], [56], [57], [58], [59],  # Outer lips
+            [60], [61], [62], [63], [64], [65], [66], [67],  # Inner lips
+            [27], [28], [29], [30], [31], [32], [33], [34], [35],  # Nose
+            [36], [37], [38], [39], [40], [41], [42], [43], [44], [45], [46], [47],  # Eyes
+            [17], [18], [19], [20], [21], [22], [23], [24], [25], [26]  # Eyebrows
+        ]
+        hullIndex = np.concatenate((hullIndex, addPoints))
+        for i in range(0, len(hullIndex)):
+            hull.append(points[str(hullIndex[i][0])])
+
+        return hull, hullIndex
+
+
+    def load_filter(self, filter_name: str):
+
+        filters = self.filters_config[filter_name]
+
+        multi_filter_runtime = []
+
+        for filter in filters:
+            temp_dict = {}
+
+            img1, img1_alpha = self.load_filter_img(filter['path'], filter['has_alpha'])
+
+            temp_dict['img'] = img1
+            temp_dict['img_a'] = img1_alpha
+
+            points = self.load_landmarks(filter['anno_path'])
+
+            temp_dict['points'] = points
+
+            if filter['morph']:
+                # Find convex hull for delaunay triangulation using the landmark points
+                hull, hullIndex = self.find_convex_hull(points)
+
+                # Find Delaunay triangulation for convex hull points
+                sizeImg1 = img1.shape
+                rect = (0, 0, sizeImg1[1], sizeImg1[0])
+                dt = fbc.calculateDelaunayTriangles(rect, hull)
+
+                temp_dict['hull'] = hull
+                temp_dict['hullIndex'] = hullIndex
+                temp_dict['dt'] = dt
+
+                if len(dt) == 0:
+                    continue
+
+            if filter['animated']:
+                filter_cap = cv2.VideoCapture(filter['path'])
+                temp_dict['cap'] = filter_cap
+
+            multi_filter_runtime.append(temp_dict)
+
+        return filters, multi_filter_runtime
+
+
+    def process_frame(self, filter_name: str, frame, write_path: str):
+        # frame = cv2.imread(read_path, 1)
+        # cv2.imwrite("processed_image.png", frame)
+        # import time
+        # time.sleep(2)
+        isFirstFrame = True
+
+        points2 = self.getLandmarks(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        # if face is partially detected
+        if points2 and (len(points2) == 75):
+            #     continue
+            ################ Optical Flow and Stabilization Code #####################
+            img2Gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            if isFirstFrame:
+                points2Prev = np.array(points2, np.float32)
+                img2GrayPrev = np.copy(img2Gray)
+                isFirstFrame = False
+            lk_params = dict(winSize=(101, 101), maxLevel=15,
+                            criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 20, 0.001))
+            points2Next, st, err = cv2.calcOpticalFlowPyrLK(img2GrayPrev, img2Gray, points2Prev,
+                                                            np.array(points2, np.float32),
+                                                            **lk_params)
+            # Final landmark points are a weighted average of detected landmarks and tracked landmarks
+            for k in range(0, len(points2)):
+                d = cv2.norm(np.array(points2[k]) - points2Next[k])
+                alpha = math.exp(-d * d / self.sigma)
+                points2[k] = (1 - alpha) * np.array(points2[k]) + alpha * points2Next[k]
+                points2[k] = fbc.constrainPoint(points2[k], frame.shape[1], frame.shape[0])
+                points2[k] = (int(points2[k][0]), int(points2[k][1]))
+            # Update variables for next pass
+            points2Prev = np.array(points2, np.float32)
+            img2GrayPrev = img2Gray
+            ################ End of Optical Flow and Stabilization Code ###############
+            if VISUALIZE_FACE_POINTS:
+                for idx, point in enumerate(points2):
+                    cv2.circle(frame, point, 2, (255, 0, 0), -1)
+                    cv2.putText(frame, str(idx), point, cv2.FONT_HERSHEY_SIMPLEX, .3, (255, 255, 255), 1)
+                # cv2.imshow("landmarks", frame)
+
+            filters, multi_filter_runtime = self.load_filter(filter_name)
+
+            for idx, filter in enumerate(filters):
+                filter_runtime = multi_filter_runtime[idx]
+                img1 = filter_runtime['img']
+                points1 = filter_runtime['points']
+                img1_alpha = filter_runtime['img_a']
+                if filter['morph']:
+                    hullIndex = filter_runtime['hullIndex']
+                    dt = filter_runtime['dt']
+                    hull1 = filter_runtime['hull']
+                    # create copy of frame
+                    warped_img = np.copy(frame)
+                    # Find convex hull
+                    hull2 = []
+                    for i in range(0, len(hullIndex)):
+                        hull2.append(points2[hullIndex[i][0]])
+                    mask1 = np.zeros((warped_img.shape[0], warped_img.shape[1]), dtype=np.float32)
+                    mask1 = cv2.merge((mask1, mask1, mask1))
+                    img1_alpha_mask = cv2.merge((img1_alpha, img1_alpha, img1_alpha))
+                    # Warp the triangles
+                    for i in range(0, len(dt)):
+                        t1 = []
+                        t2 = []
+                        for j in range(0, 3):
+                            t1.append(hull1[dt[i][j]])
+                            t2.append(hull2[dt[i][j]])
+                        fbc.warpTriangle(img1, warped_img, t1, t2)
+                        fbc.warpTriangle(img1_alpha_mask, mask1, t1, t2)
+                    # Blur the mask before blending
+                    mask1 = cv2.GaussianBlur(mask1, (3, 3), 10)
+                    mask2 = (255.0, 255.0, 255.0) - mask1
+                    # Perform alpha blending of the two images
+                    temp1 = np.multiply(warped_img, (mask1 * (1.0 / 255)))
+                    temp2 = np.multiply(frame, (mask2 * (1.0 / 255)))
+                    output = temp1 + temp2
+                else:
+                    dst_points = [points2[int(list(points1.keys())[0])], points2[int(list(points1.keys())[1])]]
+                    tform = fbc.similarityTransform(list(points1.values()), dst_points)
+                    # Apply similarity transform to input image
+                    trans_img = cv2.warpAffine(img1, tform, (frame.shape[1], frame.shape[0]))
+                    trans_alpha = cv2.warpAffine(img1_alpha, tform, (frame.shape[1], frame.shape[0]))
+                    mask1 = cv2.merge((trans_alpha, trans_alpha, trans_alpha))
+                    # Blur the mask before blending
+                    mask1 = cv2.GaussianBlur(mask1, (3, 3), 10)
+                    mask2 = (255.0, 255.0, 255.0) - mask1
+                    # Perform alpha blending of the two images
+                    temp1 = np.multiply(trans_img, (mask1 * (1.0 / 255)))
+                    temp2 = np.multiply(frame, (mask2 * (1.0 / 255)))
+                    output = temp1 + temp2
+                frame = output = np.uint8(output)
+
+            # cv2.putText(frame, "Press F to change filters", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 0, 0), 1)
+
+            # cv2.imshow("Face Filter", output)
+            cv2.imwrite(write_path, output)
+
+            # try:
+            #     filters, multi_filter_runtime = load_filter(next(iter_filter_keys))
+
+
+# mask = CvMask()
+# mask.process_frame("image.png", "anime", )
+

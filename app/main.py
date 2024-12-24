@@ -179,10 +179,18 @@ async def websocket_endpoint(websocket: WebSocket):
                 new_image = cv2.imread(received_image_path, 1) 
                 # rel_mask_path = "static/images/masks/mask1.png"
                 class_mask_path = os.path.join(script_dir, mask_path)
-                cv_mask = CvMask(class_mask_path)
-                processed_img = cv_mask.process_frame(new_image)
+                filter_name = class_mask_path[::-1].split("/", 1)[0][::-1][:-4]
+                # print("MASK NAME:", class_mask_path[::-1].split("/", 1)[0][::-1][:-4])
+
+
+                cv_mask = CvMask()
                 processed_image_path = abs_file_path+"/processed-frame.png"
-                cv2.imwrite(processed_image_path, processed_img)
+                cv_mask.process_frame(filter_name, new_image, processed_image_path)
+                
+                # cv2.imwrite(processed_image_path, processed_img)
+                # processed_img = cv_mask.process_frame(class_mask_path, new_image, processed_image_path)
+                # processed_image_path = abs_file_path+"/processed-frame.png"
+                # cv2.imwrite(processed_image_path, processed_img)
 
                 static_path = rel_path+"processed-frame.png"
                 await websocket.send_text(static_path.split("/",1)[1])
