@@ -6,47 +6,47 @@ import faceBlendCommon as fbc
 import csv
 
 VISUALIZE_FACE_POINTS = False
-path = "/home/andrew/IT-projects-start/"
-# path = ""
+
 
 class CvMask():
-    def __init__(self):
+    def __init__(self, path_to_filters="/home/andrew/IT-projects-start/static/"):
+        self.path = path_to_filters
         self.sigma = 50
 
         self.filters_config = {
             'anonymous':
-                [{'path': path+"filters/anonymous.png",
-                'anno_path': path+"filters/anonymous_annotations.csv",
+                [{'path': self.path+"filters/anonymous.png",
+                'anno_path': self.path+"filters/anonymous_annotations.csv",
                 'morph': True, 'animated': False, 'has_alpha': True}],
             'anime':
-                [{'path': path+"filters/anime.png",
-                'anno_path': path+"filters/anime_annotations.csv",
+                [{'path': self.path+"filters/anime.png",
+                'anno_path': self.path+"filters/anime_annotations.csv",
                 'morph': True, 'animated': False, 'has_alpha': True}],
             'dog':
-                [{'path': path+"filters/dog-ears.png",
-                'anno_path': path+"filters/dog-ears_annotations.csv",
+                [{'path': self.path+"filters/dog-ears.png",
+                'anno_path': self.path+"filters/dog-ears_annotations.csv",
                 'morph': False, 'animated': False, 'has_alpha': True},
-                {'path': path+"filters/dog-nose.png",
-                'anno_path': path+"filters/dog-nose_annotations.csv",
+                {'path': self.path+"filters/dog-nose.png",
+                'anno_path': self.path+"filters/dog-nose_annotations.csv",
                 'morph': False, 'animated': False, 'has_alpha': True}],
             'cat':
-                [{'path': path+"filters/cat-ears.png",
-                'anno_path': path+"filters/cat-ears_annotations.csv",
+                [{'path': self.path+"filters/cat-ears.png",
+                'anno_path': self.path+"filters/cat-ears_annotations.csv",
                 'morph': False, 'animated': False, 'has_alpha': True},
-                {'path': path+"filters/cat-nose.png",
-                'anno_path': path+"filters/cat-nose_annotations.csv",
+                {'path': self.path+"filters/cat-nose.png",
+                'anno_path': self.path+"filters/cat-nose_annotations.csv",
                 'morph': False, 'animated': False, 'has_alpha': True}],
             'jason-joker':
-                [{'path': path+"filters/jason-joker.png",
-                'anno_path': path+"filters/jason-joker_annotations.csv",
+                [{'path': self.path+"filters/jason-joker.png",
+                'anno_path': self.path+"filters/jason-joker_annotations.csv",
                 'morph': True, 'animated': False, 'has_alpha': True}],
             'gold-crown':
-                [{'path': path+"filters/gold-crown.png",
-                'anno_path': path+"filters/gold-crown_annotations.csv",
+                [{'path': self.path+"filters/gold-crown.png",
+                'anno_path': self.path+"filters/gold-crown_annotations.csv",
                 'morph': False, 'animated': False, 'has_alpha': True}],
             'flower-crown':
-                [{'path': path+"filters/flower-crown.png",
-                'anno_path': path+"filters/flower-crown_annotations.csv",
+                [{'path': self.path+"filters/flower-crown.png",
+                'anno_path': self.path+"filters/flower-crown_annotations.csv",
                 'morph': False, 'animated': False, 'has_alpha': True}],
 }
 

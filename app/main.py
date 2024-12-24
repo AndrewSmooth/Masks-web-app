@@ -183,7 +183,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 # print("MASK NAME:", class_mask_path[::-1].split("/", 1)[0][::-1][:-4])
 
 
-                cv_mask = CvMask()
+                cv_mask = CvMask("/home/andrew/IT-projects-start/static/")
                 processed_image_path = abs_file_path+"/processed-frame.png"
                 cv_mask.process_frame(filter_name, new_image, processed_image_path)
                 
