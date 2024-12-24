@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Маски</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="catalog">
+            <!-- Кнопка "Каталог" -->
+            <div class="button-container">
+                <a href="{{ url_for('get_categories') }}" class="catalog-button">Каталог</a>
+            </div>
+
+            {% if accessories %}
+                <div class="catalog-item">
+                    <ul id="items">
+                        {% for accessory in accessories %}
+                            <li>
+                                <a id="">
+                                    <img src="{{ url_for('static', path=accessory.image) }}" alt="{{ accessory.name }}">
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div> 
+            {% else %}
+            <h1>Нет аксессуаров этой категории</h1>
+            {% endif %}
+
+            <div class="mask">
+                <div>{{ category_name }}</div> 
+            </div>
+        </div>
+        <div class="preview-area">
+            <img id="photo" alt="photo" src="{{ url_for('static', path='images/placeholder.png') }}"/>
+            <button id="btn" class="button-30" role="button">Вкл/Выкл</button>
+            <!-- <img id="photo" alt="photo"/> -->
+            
+        </div>
+        
+        
+        
+    </div>
+    
+    <div class="output">
+            
+        <div class="camera">
+           <video id="video">Video stream not available.</video>
+       </div>
+       
+       <canvas id="canvas"> </canvas> 
+       <p id="chosen_mask">{{ url_for('static', path=accessories.0.image) }}</p>
+   </div>
+    
+</body>
+<script>
+    (() => {
+
+    const width = 320;
+    let chosen_mask = document.getElementById("chosen_mask")
+    let height = 0;
+    let streaming = false;
+    let video = null;
+    let is_active = false;
+    // let photo = null;
+    let btn = document.getElementById("btn")
+
+    function showViewLiveResultButton() {
+    if (window.self !== window.top) {
+      // Ensure that if our document is in a frame, we get the user
+      // to first open it in its own tab or window. Otherwise, it
+      // won't be able to request permission for camera access.
+      document.querySelector(".output").remove();
+      return true;
+    }
+    return false;
+  }
+
+    function startup() {
+        if (showViewLiveResultButton()) {
+            return;
+        }
+
+        video = document.getElementById("video");
+        // photo = document.getElementById("photo");
+        canvas = document.getElementById("canvas");
+
+        navigator.mediaDevices
+        .getUserMedia({ video: true, audio: false })
+        .then((stream) => {
+            video.srcObject = stream;
+            video.play();
+        })
+        .catch((err) => {
+            console.error(`An error occurred: ${err}`);
+        });
+
+        document.getElementById("items").addEventListener("click", function(element){
+        var target=element.target;
+        if(target.id==='items') return;
+        console.log(target);
+        chosen_mask.innerText = target.src
+        });
+
+        video.addEventListener(
+        "canplay",
+        (ev) => {
+            if (!streaming) {
+            height = video.videoHeight / (video.videoWidth / width);
+
+            // Firefox currently has a bug where the height can't be read from
+            // the video, so we will make assumptions if this happens.
+
+            if (isNaN(height)) {
+                height = width / (4 / 3);
+            }
+
+            video.setAttribute("width", width);
+            video.setAttribute("height", height);
+            canvas.setAttribute("width", width);
+            canvas.setAttribute("height", height);
+            streaming = true;
+            }
+        },
+        false,
+        );
+  }
+
+    function takePicture() {
+        const context = canvas.getContext("2d");
+        if (width && height) {
+          canvas.width = width;
+          canvas.height = height;
+          context.drawImage(video, 0, 0, width, height);
+
+        //   canvas.toBlob((blob) => {
+        //     const newImg = document.createElement("img");
+        //     const url = URL.createObjectURL(blob);
+
+        //     newImg.onload = () => {
+        //         // no longer need to read the blob so it's revoked
+        //         URL.revokeObjectURL(url);
+        //     };
+
+        //     newImg.src = url;
+        //     document.body.appendChild(newImg);
+        //     return newImg
+        //     });
+        // return 0
+          const data = canvas.toDataURL("image/png");
+        //   photo.setAttribute("src", data);
+          return data
+        }
+        return 0
+    }
+
+
+    function send_data(ev) {
+        data = takePicture();
+        if (data != 0){
+        canvas.toBlob((blob) => {
+            ws.send(chosen_mask.innerText)
+            ws.send(blob)
+            console.log(blob, chosen_mask)
+            "image/png"
+        });
+        console.log("sent")
+        }
+        if (ev) ev.preventDefault();
+      }
+    
+
+    var ws = new WebSocket("ws://127.0.0.1:8000/ws");
+    ws.onmessage = function(event) {
+        console.log("RECEIVED:", event.data);
+        // var image = JSON.parse(event.data)
+        // document.getElementById('photo').src = "fs";
+        var photo = document.getElementById('photo')
+        photo.src = `{{ url_for("static", path="${event.data}?ver=${(new Date().getTime())}")}}`
+        if (is_active == true){
+            send_data()
+        }
+        if (is_active == false){
+            document.getElementById("photo").src = "{{ url_for('static', path='images/placeholder.png') }}"
+        }
+        // photo.setAttribute("src", `{{ url_for("static", path="${event.data}") }}`);
+    };
+    
+    // Отправляем изображение по WebSocket
+    window.addEventListener("load", startup, false);
+    btn.addEventListener(
+      "click",
+      (ev) => {
+        if (is_active == false) {
+            is_active = true
+            console.log("ON")
+            send_data(ev)
+        }
+        else {
+            is_active = false
+            console.log("OFF")
+            
+        }
+        },
+      false,
+    );
+
+
+})();
+</script>
+</html> 

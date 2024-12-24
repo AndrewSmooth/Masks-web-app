@@ -1,0 +1,256 @@
+/* Основное оформление для всей страницы */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #2E2C2C; /* Тёмный фон */
+    color: #fff; /* Белый текст */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /*justify-content: center;*/
+    padding: 20px;
+    height: 100vh;
+}
+
+/* Контейнер для каталога */
+.catalog-title {
+    /*text-align: center;*/
+    width: 100%;
+    margin-bottom: 2em;
+}
+
+/* Оформление заголовка */
+.catalog-title h1 {
+    color: #fff;
+    font-size: 2em;
+    font-weight: normal;
+    margin: 0;
+    padding: 0.5em 0;
+    text-align: left;
+}
+
+/* Разделительная линия */
+.catalog-title hr {
+    border: none;
+    border-top: 5px solid #D9D9D9; /* Светло-серая линия */
+    margin: 0;
+    width: 100%;
+}
+
+/* Оформление контейнера с категориями */
+.separetor {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    padding-top: 4em;
+}
+
+/* Оформление каждого элемента каталога */
+.catalogies-items {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #fff;
+    text-decoration: none;
+    margin-bottom: 20px; /* Отступ между элементами каталога */
+}
+
+/* Оформление изображений */
+.catalogies-items img {
+    width: 300px;
+    height: auto;
+    margin-bottom: 0.9em;
+    padding: 100px;
+}
+
+/* Текст под изображением */
+.catalogies-items p {
+    margin: 0;
+    font-size: 2em;
+    color: #D9D9D9; /* Светло-серый текст */
+}
+
+/* Контейнер для каталога и области предварительного просмотра */
+.container {
+    display: flex;
+    width: 100%;
+    max-width: 1200px;
+    height: 100%;
+    margin: 0 auto;
+    align-self: flex-start;
+}
+
+/* Стили для основного блока каталога */
+.catalog {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 40%; /* Ширина каталога 40% от ширины контейнера */
+    padding: 20px; /* Отступ внутри каталога */
+}
+
+.catalog-item {
+    display: flex;
+    height: 80%;
+    flex-direction: column;
+    align-items: center;
+    color: #686565;
+    text-decoration: none;
+    margin-bottom: 20px; /* Отступ между элементами каталога */
+}
+
+.catalog-item img {
+    max-width: 300px;
+    margin-bottom: 0px;
+}
+
+.catalog-item p {
+    color: #fff;
+}
+
+/* Стили для области большого изображения или предварительного просмотра */
+.preview-area {
+    width: 55%; /* Ширина области предварительного просмотра */
+    height: 100%; /* Высота области предварительного просмотра */ 
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    margin-left: 20px; /* Отступ слева для разделения с каталогом */
+    
+}
+
+.preview-area img {
+    max-width: 100%;
+    max-height: 100%;
+    /* padding-top: 12em; */
+}
+
+/* Кнопка каталога */
+.catalog-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #2E2C2C; /* Цвет фона */
+    color: white; /* Цвет текста */
+    text-decoration: none; /* Убираем подчеркивание */
+    border-radius: 5px; /* Скругление углов */
+    transition: background-color 0.3s; /* Плавный переход цвета */
+    font-size: 150%;
+}
+
+.catalog-button:hover {
+    background-color: #6d6969; /* Цвет фона при наведении */
+}
+
+/* Дополнительный стиль для текста */
+.mask {
+    color: #D9D9D9;
+    margin-bottom: 10px;
+    font-size: 150%;
+}
+
+ul{
+    list-style: None;
+}
+
+li {
+    list-style: None;
+    cursor: pointer;
+}
+
+
+.camera {
+    width: 340px;
+    /* display: inline-block; */
+    display: None;
+  }
+
+  #items {
+    height: 100%;
+    overflow-y: scroll;
+  }
+
+  #items::-webkit-scrollbar {
+    display: none;
+  }
+
+  #video {
+    border: 1px solid black;
+    box-shadow: 2px 2px 3px black;
+    width: 320px;
+    height: 240px;
+    display: None;
+  }
+
+  #photo {
+    width: 100%;
+    height: 50%;
+    object-fit: cover;
+  }
+
+  #chosen_mask{
+    display: None;
+  }
+
+  #canvas {
+    display: None;
+  }
+  
+  /* #photo {
+    border: 1px solid black;
+    box-shadow: 2px 2px 3px black;
+    width: 320px;
+    height: 240px;
+    text-align: center;
+    margin: auto;
+  } */
+
+
+/* CSS */
+.button-30 {
+    margin-top: 5%;
+  align-items: center;
+  appearance: none;
+  background-color: #FCFCFD;
+  border-radius: 4px;
+  border-width: 0;
+  box-shadow: rgba(45, 35, 66, 0.4) 0 2px 4px,rgba(45, 35, 66, 0.3) 0 7px 13px -3px,#D6D6E7 0 -3px 0 inset;
+  box-sizing: border-box;
+  color: #36395A;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: "JetBrains Mono",monospace;
+  height: 48px;
+  justify-content: center;
+  line-height: 1;
+  list-style: none;
+  overflow: hidden;
+  padding-left: 16px;
+  padding-right: 16px;
+  position: relative;
+  text-align: left;
+  text-decoration: none;
+  transition: box-shadow .15s,transform .15s;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  white-space: nowrap;
+  will-change: box-shadow,transform;
+  font-size: 18px;
+}
+
+.button-30:focus {
+  box-shadow: #D6D6E7 0 0 0 1.5px inset, rgba(45, 35, 66, 0.4) 0 2px 4px, rgba(45, 35, 66, 0.3) 0 7px 13px -3px, #D6D6E7 0 -3px 0 inset;
+}
+
+.button-30:hover {
+  box-shadow: rgba(45, 35, 66, 0.4) 0 4px 8px, rgba(45, 35, 66, 0.3) 0 7px 13px -3px, #D6D6E7 0 -3px 0 inset;
+  transform: translateY(-2px);
+}
+
+.button-30:active {
+  box-shadow: #D6D6E7 0 3px 7px inset;
+  transform: translateY(2px);
+}

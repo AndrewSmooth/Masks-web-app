@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Каталог</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="catalog-title">
+        <h1>Каталог</h1>
+        <hr width="1500">
+        <div class="separetor">
+
+            {% if categories %}   
+                {% for category in categories %}
+                    <div class="catalogies-items">
+                        <li>
+                            <a href="{{ url_for('get_accessories', category_id=category.id) }}">
+                                <img src="{{ url_for('static', path=category.image) }}" alt="{{ category.name }}">
+                            </a>
+                        </li>
+                        <p>{{ category.name }}</p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <h1>Категорий нет</h1>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
